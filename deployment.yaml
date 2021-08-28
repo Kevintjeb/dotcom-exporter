@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    deployment-name: dotcom-exporter
+  name: dotcom-exporter
+spec:
+  selector:
+    matchLabels:
+      deployment-name: dotcom-exporter
+  replicas: 1
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        deployment-name: dotcom-exporter
+    spec:
+      containers:
+        - args:
+            - --dotcom.pid=<CONFIGURE YOUR PID HERE>
+            - --dotcom.sites=<CONFIGURE WHICH SITES YOU WANT HERE>
+          image: <CONFIGURE YOUR CONTAINER IMAGE HERE>
+          name: dotcom-exporter
+          ports:
+            - containerPort: 9423
+              name: http-9423
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 250m
+              memory: 32Mi
+            requests:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      restartPolicy: Always
