@@ -8,7 +8,7 @@ RUN GOOS=linux GARCH=amd64 CGO_ENABLED=0 go build -o dotcom_monitor
 
 ###############################################
 
-FROM alpine:3.14.0
+FROM alpine:3.14.2
 
 LABEL MAINTAINER="Kevin van den Broek <info@kevinvandenbroek.nl>"
 
