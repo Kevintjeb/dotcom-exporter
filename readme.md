@@ -58,6 +58,8 @@ Example metrics output:
     -web.telemetry-path string
             Path under which to expose metrics. (default "/metrics")
 
+    -dotcom.http.timeout duration
+            HTTP timeout used when scraping from dotcom (default 10s)
 ### Using this exporter in Kubernetes
 
 #### Setting up the exporter in Kubernetes

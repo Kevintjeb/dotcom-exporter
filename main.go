@@ -145,9 +145,6 @@ func (d *DotcomMonitor) scrape(ch chan<- prometheus.Metric) error {
 
 // Collect metrics from dotcom monitor.
 func (d *DotcomMonitor) Collect(ch chan<- prometheus.Metric) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	if err := d.scrape(ch); err != nil {
 		log.Error("Failed to gather stats: ", err)
 		ch <- prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 0.0)
@@ -157,10 +154,10 @@ func (d *DotcomMonitor) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 1.0)
 }
 
-func NewDotcomMonitor(pid string, sites []string) *DotcomMonitor {
+func NewDotcomMonitor(pid string, sites []string, httpTimeout time.Duration) *DotcomMonitor {
 	return &DotcomMonitor{
 		client: http.Client{
-			Timeout: 10 * time.Second,
+			Timeout: httpTimeout,
 		},
 		sites: sites,
 		pid:   pid,
@@ -171,13 +168,15 @@ func main() {
 	var (
 		listenAddress = flag.String("web.listen-address", ":9423", "Address to listen on for web interface and telemetry.")
 		metricsPath   = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-		sites         = flag.String("dotcom.sites", "*", "comma separated list of sites to monitor. Format: Site1,Site2,Site3. This is a list of site (so called “Devices”) IDs or names in Dotcom-Monitor. You can output multiple sites in one request and use wildcard characters (“*”, “?”) to filter request results by some pattern: 123*")
-		pid           = flag.String("dotcom.pid", "2AA43CD13DDS2CHJ20FGHY85DF203E33", "This is your account Global Unique Identifier (Configure > Integrations > the Unique Identifier (UID) column).")
+
+		sites       = flag.String("dotcom.sites", "*", "comma separated list of sites to monitor. Format: Site1,Site2,Site3. This is a list of site (so called “Devices”) IDs or names in Dotcom-Monitor. You can output multiple sites in one request and use wildcard characters (“*”, “?”) to filter request results by some pattern: 123*")
+		pid         = flag.String("dotcom.pid", "2AA43CD13DDS2CHJ20FGHY85DF203E33", "This is your account Global Unique Identifier (Configure > Integrations > the Unique Identifier (UID) column).")
+		httpTimeout = flag.Duration("dotcom.http.timeout", 10*time.Second, "HTTP timeout used when scraping from dotcom")
 	)
 	flag.Parse()
 
 	log.Infof("Starting dotcom monitor exporter; PID: %.10s... ; Sites: %s", *pid, strings.Split(*sites, ","))
-	exporter := NewDotcomMonitor(*pid, strings.Split(*sites, ","))
+	exporter := NewDotcomMonitor(*pid, strings.Split(*sites, ","), *httpTimeout)
 	prometheus.MustRegister(exporter)
 
 	http.Handle(*metricsPath, promhttp.Handler())
