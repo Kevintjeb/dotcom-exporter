@@ -145,13 +145,14 @@ func (d *DotcomMonitor) scrape(ch chan<- prometheus.Metric) error {
 
 // Collect metrics from dotcom monitor.
 func (d *DotcomMonitor) Collect(ch chan<- prometheus.Metric) {
+	ts := time.Now()
 	if err := d.scrape(ch); err != nil {
 		log.Error("Failed to gather stats: ", err)
-		ch <- prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 0.0)
+		ch <- prometheus.NewMetricWithTimestamp(ts, prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 0.0))
 		return
 	}
 
-	ch <- prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 1.0)
+	ch <- prometheus.NewMetricWithTimestamp(ts, prometheus.MustNewConstMetric(dotcomScrapeSuccessDesc, prometheus.GaugeValue, 1.0))
 }
 
 func NewDotcomMonitor(pid string, sites []string, httpTimeout time.Duration) *DotcomMonitor {
